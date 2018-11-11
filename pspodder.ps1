@@ -22,12 +22,10 @@
 # Set variables
 #=============================================================================
 $UserDir    = $env:USERPROFILE
-#$PodcastDir = ('{0}\Music\PODCASTS' -f $UserDir)
 $PodcastDir = 'D:\PODCASTS'
 if(!(Test-Path -Path $PODCASTDIR )){
     $PodcastDir = ('{0}\Music\PODCASTS' -f $UserDir)
 }
-#$PodcastDir = 'D:\PODCASTS'
 $LogFile    = ('{0}\pspodder.log' -f $PSScriptRoot)
 $ConfFile   = ('{0}\pspodder.conf' -f $PSSCriptRoot) 
 $ErrorFile  = ('{0}\pspodder.err' -f $PSScriptRoot) 
@@ -215,8 +213,8 @@ ForEach-Object -Process {
 # SIG # Begin signature block
 # MIID3gYJKoZIhvcNAQcCoIIDzzCCA8sCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUryQF6Nwu8Rq94ZoQskmE8jaa
-# sUegggH9MIIB+TCCAWKgAwIBAgIQU8MIAMZTS7JD+L1b4iYp/TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUtvTpdwLo7fERopDaxO++dVVg
+# JOCgggH9MIIB+TCCAWKgAwIBAgIQU8MIAMZTS7JD+L1b4iYp/TANBgkqhkiG9w0B
 # AQUFADAXMRUwEwYDVQQDDAxILkouIEVubmVtYW4wHhcNMTgwMTA3MTUxMTA2WhcN
 # MjIwMTA3MDAwMDAwWjAXMRUwEwYDVQQDDAxILkouIEVubmVtYW4wgZ8wDQYJKoZI
 # hvcNAQEBBQADgY0AMIGJAoGBALOsCTR78+2cC6bVdl5Bj3EFy8YQbPzDPMwZO98Z
@@ -230,8 +228,8 @@ ForEach-Object -Process {
 # MBcxFTATBgNVBAMMDEguSi4gRW5uZW1hbgIQU8MIAMZTS7JD+L1b4iYp/TAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUsQM0qphEabpSpxxIeDuoVC7ghNkwDQYJKoZIhvcNAQEBBQAE
-# gYBVX/aeVIIvVNFb1ISu4Flo86rT1WklRX8Pt95l+ljJNgynRKfvVZs9SNTBtXEH
-# sC/ItezN0tmeRDTcA27V1+J7pGi3t7DPdjKvWJ7ZM1nFzPrtI3ErBirZV07p2sZ7
-# b2hFZUWqDOtB+i/uX2X/1xwWkQMTvKDmQx+eF5s7vLuCiA==
+# hkiG9w0BCQQxFgQUdd6GCjvuBZ6uWudbCAkzqEjH+TowDQYJKoZIhvcNAQEBBQAE
+# gYCuDSXYHAyKACG0JecGoMQ9zm6SCLEObfKNBFiwX37rXbp0d0BeOyJvhptTY8nF
+# e7byVrD0KgmxwwyHRsGAHDwQQ5k0RIDrRXtEMJU5RmqnQ5m7NgZT/NsQCNAcETNG
+# iZ1HMjg+PL9bjQ8Jjr178HMMe2EfaU/l1dcZbIVG+Bj69Q==
 # SIG # End signature block
