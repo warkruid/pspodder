@@ -23,8 +23,11 @@
 #=============================================================================
 $UserDir    = $env:USERPROFILE
 $PodcastDir = 'D:\PODCASTS'
-if(!(Test-Path -Path $PODCASTDIR )){
-    $PodcastDir = ('{0}\Music\PODCASTS' -f $UserDir)
+
+# Choose a directory were you can write to. Note: if malware/ransomware protection
+# is activated you only have permission to write in Downloads or temp on you C: drive.
+if(!(Test-Path -Path $PodcastDir )){
+    $PodcastDir = (${UserDir} + '\Downloads\PODCASTS' -f $UserDir)
 }
 $LogFile    = ('{0}\pspodder.log' -f $PSScriptRoot)
 $ConfFile   = ('{0}\pspodder.conf' -f $PSSCriptRoot) 
@@ -32,8 +35,8 @@ $ErrorFile  = ('{0}\pspodder.err' -f $PSScriptRoot)
 $DayDir     = ('{0}\{1}' -f $PodcastDir, (Get-Date).ToString('yyyy-MM-dd'))
 $Playlist   = ('{0}\{1}-podcasts.m3u' -f $DayDir, (Get-Date).ToString('yyyy-MM-dd'))
 $MaxItems   = 3 # Max downloads for each url
-$MaxDays    = 2 # Days to keep
-
+$MaxDays    = 3 # Days to keep
+$Player  = 'C:\Program Files\VideoLAN\VLC\vlc.exe'
 #=============================================================================
 # Checks
 #=============================================================================
@@ -71,7 +74,7 @@ if (!(Test-Path -Path $ErrorFile))
 }
 
 #=============================================================================
-# Call Module CleanDirectory
+# Call Module Remove-Directory
 #=============================================================================
 Remove-Directory -directory $PodcastDir -interval 'days' -count $MaxDays 
 
@@ -84,96 +87,87 @@ Import-Module -Name BitsTransfer
 try
 {
   foreach ($line in $PodcastConf)
-{
-  Write-Output -InputObject ('Checking: {0}' -f $line)
+  {
+    if ($line -match "^#.*") { continue }
+    Write-Output -InputObject ('Checking: {0}' -f $line)
     
-  if (!(Test-Path -Path $DayDir))
-  {
-    Write-Output  -InputObject ('Creating directory: {0}' -f $DayDir)
-    New-Item -ItemType Directory -Path $DayDir
-  }  
-  Set-Location -Path $DayDir   
+    if (!(Test-Path -Path $DayDir))
+    {
+      Write-Output  -InputObject ('Creating directory: {0}' -f $DayDir)
+      New-Item -ItemType Directory -Path $DayDir
+    }  
+    Set-Location -Path $DayDir   
         
-  # Haul in net.webclient object  from .NET
+    # Haul in net.webclient object  from .NET
 
-  Try
-  {
-    $a = ([xml](New-Object -TypeName net.webclient -ErrorAction Continue).downloadstring(('{0}' -f $line)))
-  }
-  Catch {
-    Write-Error -Message ('Errors occured downloading from {0}' -f $line) 
-    $_ | Out-File -FilePath ('{0}' -f $ErrorFile) -Append
-  }
-  $count = 0 # Number of items downloaded
-
-
-  $a.rss.channel.item | ForEach-Object -Process {  
-    Try 
+    Try
     {
-      $url = New-Object -TypeName System.Uri -ArgumentList ($_.enclosure.url) -ErrorAction Stop
-      
+      $a = ([xml](New-Object -TypeName net.webclient -ErrorAction Continue).downloadstring(('{0}' -f $line)))
     }
-    Catch 
-    {
-      Write-Error -Message ('Errors occured extracting RSS info from {0}' -f $line) 
+    Catch {
+      Write-Error -Message ('Errors occured downloading from {0}' -f $line) 
       $_ | Out-File -FilePath ('{0}' -f $ErrorFile) -Append
     }
-    #Write-Output 'url {0} gevonden' -f $url
-    $file = $url.Segments[-1]
-    $count++
+    $count = 0 # Number of items downloaded
 
-    # If not already downloaded $MaxItems of files, and $file not in $logfile
 
-    if (($count -le $MaxItems) -and !(Select-String -Path ('{0}' -f $LogFile) -Pattern ('{0}' -f $file))) 
-    {
-      Write-Output -InputObject ('Downloading: {0}' -f $file)
-      Write-Output -InputObject ('URL = {0}' -f $url)
-      # Test if file name already exists, if yes, generate a random string
-      # and prefix it to the original filename
-            
-      While ((Test-Path -Path $DayDir/$file)) 
-      {
-        [String]$RandomString = Get-Random
-        $file = $RandomString + $file
-      }
+    $a.rss.channel.item | ForEach-Object -Process {  
       Try 
       {
-        #(New-Object -TypeName System.Net.WebClient -ErrorAction Stop).DownloadFile($url,('{0}\{1}' -f $DayDir, $file))
-        (Start-BitsTransfer -Source $url -Destination ('{0}\{1}' -f $DayDir, $file) -ErrorAction Stop)
+        $url = New-Object -TypeName System.Uri -ArgumentList ($_.enclosure.url) -ErrorAction Stop
+      
       }
-      # NOTE: When you use a SPECIFIC catch block, exceptions thrown by -ErrorAction Stop MAY LACK
-      # some InvocationInfo details such as ScriptLineNumber.
-      # REMEDY: If that affects you, remove the SPECIFIC exception type [System.Exception] in the code below
-      # and use ONE generic catch block instead. Such a catch block then handles ALL error types, so you would need to
-      # add the logic to handle different error types differently by yourself.
-      catch 
+      Catch 
       {
-        # get error record
-        [Management.Automation.ErrorRecord]$e = $_
-
-        # retrieve information about runtime error
-        $info = New-Object -TypeName PSObject -Property @{
-          Exception = $e.Exception.Message
-          Reason    = $e.CategoryInfo.Reason
-          Target    = $e.CategoryInfo.TargetName
-          Script    = $e.InvocationInfo.ScriptName
-          Line      = $e.InvocationInfo.ScriptLineNumber
-          Column    = $e.InvocationInfo.OffsetInLine
-        }
-        
-        # output information. Post-process collected info, and log info (optional)
-        $info | Out-File -FilePath ('{0}' -f $ErrorFile) -Append
+        Write-Error -Message ('Errors occured extracting RSS info from {0}' -f $line) 
+        $_ | Out-File -FilePath ('{0}' -f $ErrorFile) -Append
       }
-      $file | Out-File -FilePath ('{0}' -f $LogFile) -Append
+      $file = $url.Segments[-1]
+      $count++
+
+      # If not already downloaded $MaxItems of files, and $file not in $logfile
+
+      if (($count -le $MaxItems) -and !(Select-String -Path ('{0}' -f $LogFile) -Pattern ('{0}' -f $file))) 
+      {
+        Write-Output -InputObject ('Downloading: {0}' -f $file)
+        Write-Output -InputObject ('URL = {0}' -f $url)
+        # Test if file name already exists, if yes, generate a random string
+        # and prefix it to the original filename
+            
+        While ((Test-Path -Path $DayDir/$file)) 
+        {
+          [String]$RandomString = Get-Random
+          $file = $RandomString + $file
+        }
+        Try 
+        {
+          #(New-Object -TypeName System.Net.WebClient -ErrorAction Stop).DownloadFile($url,('{0}\{1}' -f $DayDir, $file))
+          (Start-BitsTransfer -Source $url -Destination ('{0}\{1}' -f $DayDir, $file) -ErrorAction Stop)
+        }
+        catch 
+        {
+          # get error record
+          [Management.Automation.ErrorRecord]$e = $_
+
+          # retrieve information about runtime error
+          $info = New-Object -TypeName PSObject -Property @{
+            Exception = $e.Exception.Message
+            Reason    = $e.CategoryInfo.Reason
+            Target    = $e.CategoryInfo.TargetName
+            Script    = $e.InvocationInfo.ScriptName
+            Line      = $e.InvocationInfo.ScriptLineNumber
+            Column    = $e.InvocationInfo.OffsetInLine
+          }
+        
+          # output information. Post-process collected info, and log info (optional)
+          $info | Out-File -FilePath ('{0}' -f $ErrorFile) -Append
+        }
+        $file | Out-File -FilePath ('{0}' -f $LogFile) -Append
+      }
     }
   }
 }
-}
-# NOTE: When you use a SPECIFIC catch block, exceptions thrown by -ErrorAction Stop MAY LACK
-# some InvocationInfo details such as ScriptLineNumber.
-# REMEDY: If that affects you, remove the SPECIFIC exception type [System.Net.WebException] in the code below
-# and use ONE generic catch block instead. Such a catch block then handles ALL error types, so you would need to
-# add the logic to handle different error types differently by yourself.
+
 catch [System.Net.WebException]
 {
   # get error record
@@ -202,9 +196,18 @@ Get-ChildItem -Exclude *.m3u |
 Where-Object -FilterScript {
   !$_.PsIsContainer
 } |
+
 ForEach-Object -Process {
   $_.Name
 } > $Playlist
+
+
+#TODO make an option for downloading OR streaming
+# Check if vlcplayer exists
+if ((Test-Path -Path $Player -IsValid)) 
+{
+  Start-Process -FilePath $Player $Playlist 
+}
 
 #====================================================================================
 # End
